@@ -49,3 +49,33 @@ konversi statis→dinamis, integritas tag merchant).
   on-demand. Keputusan memakai jalur ini ada di pemilik merchant.
 - Sesi bisa dicabut GoBiz sewaktu-waktu; bila refresh gagal, jalankan
   `login_cli.py` lagi.
+
+## Model keamanan
+
+Pertanyaan yang wajar: *kenapa gateway ini memegang token sesi GoBiz,
+kenapa tidak membaca email notifikasi saja?* Jawabannya:
+
+- **Token tidak pernah diberikan ke pihak ketiga.** Sesi dibuat oleh
+  login pemilik merchant sendiri (OTP ke nomornya sendiri) dan hanya
+  dipakai oleh proses di mesin yang sama. Seluruh kode yang menyentuh
+  sesi ada di repo ini dan bisa dibaca — tidak ada bagian terobfuskasi,
+  tidak ada panggilan keluar selain ke `api.gobiz.co.id` dan
+  `api.gojekapi.com`.
+- **Penyimpanan terisolasi.** Sesi tersimpan di `data/session.json`
+  (izin 0600) di folder yang masuk `.gitignore`; gateway hanya bind
+  `127.0.0.1` dan semua endpoint memakai API key. `session.json` tidak
+  boleh dibagikan atau dikomit — perlakukan seperti kata sandi.
+- **Bisa dicabut kapan saja.** Refresh token berputar setiap refresh
+  (token lama mati). Untuk membunuh sesi sepenuhnya: keluar dari sesi
+  GoBiz (logout perangkat) atau hapus `data/session.json` lalu restart
+  layanan; akses berhenti saat itu juga.
+- **Kenapa bukan baca email.** Email resmi GoPay Merchant adalah
+  *laporan penjualan harian*, bukan notifikasi per transaksi — deteksi
+  pembayaran bisa terlambat sampai ±24 jam, tidak cocok untuk
+  pengkreditan otomatis yang harus berjalan dalam hitungan detik.
+  Selain itu akses baca email berarti kredensial IMAP ke **seluruh**
+  kotak surat, radius risikonya lebih besar daripada satu sesi
+  merchant yang terisolasi dan bisa dicabut sendiri.
+- **Batas yang jujur.** Sesi tetaplah kredensial yang kuat: jalankan
+  gateway hanya di mesin milik sendiri, dan sadari ini otomasi tidak
+  resmi (lihat "Catatan jujur" di atas).
