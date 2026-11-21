@@ -1,0 +1,10 @@
+# data & sesi — JANGAN pernah dikomit
+data/
+*.env
+gw.env
+session.json
+state.json
+qris_static.txt
+__pycache__/
+*.pyc
+*.png
